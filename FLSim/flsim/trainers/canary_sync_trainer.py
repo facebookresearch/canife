@@ -42,7 +42,7 @@ from torchvision.transforms.functional import normalize
 from tqdm import tqdm
 
 
-sys.path.append("../../mad_canaries")
+sys.path.append("../../canife")
 from canife import CanaryAnalyser, CanaryDesigner, CanaryDesignerNLP
 from canife.utils import display_gpu_mem
 
