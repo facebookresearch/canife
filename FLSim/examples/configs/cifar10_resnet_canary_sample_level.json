@@ -1,0 +1,58 @@
+{
+  "config": {
+    "trainer": {
+      "_base_": "base_canary_sync_trainer",
+      "epochs": 1000,
+      "server": {
+        "_base_": "base_sync_server",
+        "aggregation_type": 0,
+        "server_optimizer": {
+          "_base_": "base_fed_avg_with_lr",
+          "lr": 1,
+          "momentum": 0
+        },
+        "active_user_selector": {
+          "_base_": "base_uniformly_random_active_user_selector"
+        }
+      },
+      "client": {
+        "_base_": "base_dp_client",
+        "epochs": 1,
+        "optimizer": {
+          "_base_": "base_optimizer_sgd",
+          "lr": 0.01,
+          "momentum": 0
+        },
+        "privacy_setting": {
+          "noise_multiplier": 0,
+          "clipping_value": 1,
+          "target_delta": 1e-5
+        }
+      },
+      "users_per_round": 1,
+      "train_metrics_reported_per_epoch": 1,
+      "always_keep_trained_model": false,
+      "report_train_metrics": true,
+      "use_train_clients_for_aggregation_metrics": true,
+      "eval_epoch_frequency": 1,
+      "do_eval": true,
+      "report_train_metrics_after_aggregation": true,
+      "checkpoint_only": false,
+      "load_checkpoint": false
+    },
+    "data": {
+      "local_batch_size": 128,
+      "examples_per_user": 128,
+      "data_root": "",
+      "debug_config": false,
+      "canary_iters": 1
+    },
+    "model": {
+      "model_arch": "simpleconv",
+      "num_classes": 10,
+      "dropout": 0
+    },
+    "distributed_world_size": 1,
+    "use_cuda_if_available": true
+  }
+}

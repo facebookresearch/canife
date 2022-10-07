@@ -1,0 +1,56 @@
+{
+    "config": {
+      "trainer": {
+        "_base_": "base_canary_sync_trainer",
+        "server": {
+          "_base_": "base_sync_dp_server",
+          "server_optimizer": {
+            "_base_": "base_fed_avg_with_lr",
+            "lr": 1,
+            "momentum": 0
+          },
+          "privacy_setting": {
+            "noise_multiplier": 0,
+            "clipping_value": 1,
+            "target_delta": 1e-5
+          },
+          "aggregation_type": "AVERAGE",
+          "active_user_selector": {
+            "_base_": "base_uniformly_random_active_user_selector"
+          }
+        },
+        "client": {
+          "optimizer": {
+            "lr": 0.01,
+            "momentum": 0,
+            "_base_": "base_optimizer_sgd"
+          },
+          "epochs": 1
+        },
+        "users_per_round": 5,
+        "epochs": 5,
+        "train_metrics_reported_per_epoch": 10,
+        "always_keep_trained_model": false,
+        "eval_epoch_frequency": 1,
+        "do_eval": true,
+        "report_train_metrics_after_aggregation": true,
+        "checkpoint_only": false,
+        "load_checkpoint": false
+      },
+      "data": {
+        "local_batch_size": 10,
+        "data_root": "",
+        "debug_config": false,
+        "canary_iters": 1,
+        "user_dist": "niid"
+      },
+      "model": {
+        "model_arch": "resnet",
+        "num_classes": 62,
+        "dropout": 0,
+        "in_channels": 1
+      },
+      "distributed_world_size": 1,
+      "use_cuda_if_available": true
+    }
+  }

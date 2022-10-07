@@ -1,0 +1,3 @@
+[submodule "privacy_lint"]
+	path = privacy_lint
+	url = https://github.com/facebookresearch/privacy_lint

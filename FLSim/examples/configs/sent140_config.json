@@ -1,0 +1,57 @@
+{
+  "config": {
+    "trainer": {
+      "_base_": "base_sync_trainer",
+      "server": {
+        "_base_": "base_sync_server",
+        "server_optimizer": {
+          "_base_": "base_fed_avg_with_lr",
+          "lr": 0.24421284779883723,
+          "momentum": 0
+        },
+        "active_user_selector": {
+          "_base_": "base_uniformly_random_active_user_selector"
+        }
+      },
+      "client": {
+        "epochs": 1,
+        "optimizer": {
+          "_base_": "base_optimizer_sgd",
+          "lr": 5.753548939488184,
+          "momentum": 0
+        }
+      },
+      "users_per_round": 100,
+      "epochs": 20,
+      "train_metrics_reported_per_epoch": 10,
+      "always_keep_trained_model": false,
+      "eval_epoch_frequency": 1,
+      "do_eval": true,
+      "report_train_metrics_after_aggregation": true,
+      "checkpoint_only": false,
+      "load_checkpoint": false
+    },
+    "data": {
+      "local_batch_size": 32,
+      "max_seq_len": 25,
+      "vocab_size": 10000,
+      "user_dist": "niid",
+      "num_users": "60k",
+      "data_root": "",
+      "debug_config": true,
+      "canary_iters": 1,
+      "model_arch": "lstm"
+    },
+    "model": {
+      "num_classes": 2,
+      "model_arch": "lstm",
+      "n_hidden": 100,
+      "dropout": 0.1,
+      "target_eval": 69,
+      "window_size": 1,
+      "average_type": "sma"
+    },
+    "distributed_world_size": 1,
+    "use_cuda_if_available": true
+  }
+}

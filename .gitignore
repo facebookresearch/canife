@@ -1,0 +1,15 @@
+.vscode
+*.DS_Store
+.DS_Store
+*.pyc
+plotting/saved_sweeps/
+plotting/data/
+plotting/sweep_plots/
+plotting/plot_sweep.py
+plotting/paper_plotter.py
+/FLSim/runs/
+/runs/
+/sweeps/results
+central_example.py
+local_checkpoints/
+sweeps/
