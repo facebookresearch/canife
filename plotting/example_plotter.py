@@ -19,7 +19,7 @@ import seaborn as sns
 import torch
 
 
-sys.path.append("../../mad_canaries")
+sys.path.append("../../canife")
 sys.path.append("../../privacy_lint")
 
 from collections import defaultdict

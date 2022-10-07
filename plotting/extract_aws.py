@@ -54,4 +54,4 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extract canife sweep")
     parser.add_argument("--sweep", type=str, help= "Name of saved sweep")
     args = parser.parse_args()
-    extract_sweep(csv_name=args.sweep, root_dir=f"/checkpoints/{USERNAME}/mad_canaries/{args.sweep}")
+    extract_sweep(csv_name=args.sweep, root_dir=f"/checkpoints/{USERNAME}/canife/{args.sweep}")
