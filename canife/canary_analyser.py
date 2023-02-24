@@ -254,7 +254,7 @@ class CanaryAnalyser():
                 plt.clf()
                 self.logger.info("Saving nlp error...")
 
-    def ci_eps(self, fp, fn, n_pos, n_neg, delta=10e-5, bound="lower"):
+    def ci_eps(self, fp, fn, n_pos, n_neg, delta=1e-5, bound="lower"):
         """Calculate the 95% CI for empirial epsilon via the Clopper-Pearson method
 
         Args:
@@ -283,7 +283,7 @@ class CanaryAnalyser():
             
         return self.empirical_eps(1-fn_hi,fp_hi, delta=delta, type=bound)
 
-    def empirical_eps(self, tpr, fpr, delta=10e-5, type=""):
+    def empirical_eps(self, tpr, fpr, delta=1e-5, type=""):
         """Calculate empirical epsilon
 
         Args:
@@ -306,7 +306,39 @@ class CanaryAnalyser():
             x = [float("inf")]
 
         return math.log(max(x))
+    
+    def _compute_empirical_eps(self, attack_results: AttackResults, use_max_acc_threshold=False):
+        n_pos, n_neg = len(attack_results.scores_train), len(attack_results.scores_test)     
+        delta = 1/(n_pos + n_neg)
+       
+        max_empirical_eps = 0
+        _, scores = attack_results._get_scores_and_labels_ordered()
+        tpr_fpr = attack_results.get_tpr_fpr()
+        
+        if use_max_acc_threshold: # Calculate empirical eps from max acc threshold
+            max_acc_thresh = attack_results.get_max_accuracy_threshold()[0]
+            tp = int((attack_results.scores_train >= max_acc_thresh).sum().item())
+            fp = int((attack_results.scores_test >= max_acc_thresh).sum().item())
+            max_fp, max_fn, max_tp, max_tn = fp, n_pos-tp, tp, n_neg-fp
+            max_tpr, max_fpr = max_tp / (max_tp + max_fn), max_fp/(max_fp+max_tn)
+            max_empirical_eps = self.empirical_eps(max_tpr, max_fpr, delta=delta)
+        else: # Maximise empirical eps over TPR/FPR
+            for i, t in enumerate(scores):
+                tpr, fpr = tpr_fpr[0][i], tpr_fpr[1][i]
+                empirical_eps = self.empirical_eps(tpr, fpr, delta=delta)
+                acc = attack_results.get_accuracy(t)
+                
+                if empirical_eps > max_empirical_eps and (empirical_eps != float("inf") or acc == 1):
+                    tp = int((attack_results.scores_train >= t).sum().item())
+                    fp = int((attack_results.scores_test >= t).sum().item())
+                    max_empirical_eps = empirical_eps
+                    max_fp, max_fn, max_tp, max_tn = fp, n_pos-tp, tp, n_neg-fp
+                    max_tpr, max_fpr = tpr, fpr
 
+        empirical_eps_lower = self.ci_eps(max_fp, max_fn, n_pos=n_pos, n_neg=n_neg, delta=delta)
+        empirical_eps_upper = self.ci_eps(max_fp, max_fn, bound="upper", n_pos=n_pos, n_neg=n_neg, delta=delta)
+        return max_empirical_eps, empirical_eps_lower, empirical_eps_upper, max_fp, max_fn, max_tp, max_tn
+    
     def _compute_canary_metrics(self, initial_privacy_budget, final_privacy_budget, type="canary", correct_bias=False, plot_prc=True, **kwargs): 
         """Computes canary and attack metrics for checkpointing
 
@@ -349,28 +381,21 @@ class CanaryAnalyser():
         self.logger.info(f"=== Computing metrics for type={type}")
         self.logger.info(f"Number of tests={self.num_tests}, without={len(results.scores_train)}, with={len(results.scores_test)}, n={n}")
         
-        tp = int((results.scores_train > max_accuracy_threshold).sum().item())
-        fp = int((results.scores_test > max_accuracy_threshold).sum().item())
-        tn = int((results.scores_test <= max_accuracy_threshold).sum().item())
-        fn = int((results.scores_train <= max_accuracy_threshold).sum().item())
+        empirical_eps, empirical_eps_lower, empirical_eps_upper, fp, fn, tp, tn = self._compute_empirical_eps(attack_results=results, use_max_acc_threshold=False)
         self.logger.info(f"n={n}, tp={tp}, fp={fp}, tn={tn}, fn={fn}")
         
         fpr = fp/(fp+tn) 
         fnr = fn/(fn+tp)
         tpr = 1-fnr
         self.logger.info(f"FPR={fpr}, TPR={tpr}, FNR={fnr}")
-
-        empirical_eps = self.empirical_eps(tpr, fpr, delta=self.delta, type="empirical")
-        lower_eps = self.ci_eps(fp, fn, n_pos=n_pos, n_neg=n_neg, delta=self.delta)
-        upper_eps = self.ci_eps(fp, fn, bound="upper", n_pos=n_pos, n_neg=n_neg, delta=self.delta)
-        self.logger.info(f"Type={type}, Acc= {canary_metrics['mia_acc']}, empirical eps={empirical_eps}, lower, upper =({lower_eps},{upper_eps})\n")
+        self.logger.info(f"Type={type}, Acc= {canary_metrics['mia_acc']}, empirical eps={empirical_eps}, lower, upper =({empirical_eps_lower},{empirical_eps_upper})\n")
             
         canary_metrics["fp"] = fp
         canary_metrics["fn"] = fn
         canary_metrics["tp"] = tp
         canary_metrics["tn"] = tn
-        canary_metrics["empirical_eps_lower"] = lower_eps
-        canary_metrics["empirical_eps_upper"] = upper_eps
+        canary_metrics["empirical_eps_lower"] = empirical_eps_lower
+        canary_metrics["empirical_eps_upper"] = empirical_eps_upper
         canary_metrics["empirical_eps"] = empirical_eps
         canary_metrics["without_canary_sd"] = math.sqrt(canary_metrics["without_canary_var"])
         canary_metrics["with_canary_sd"] = math.sqrt(canary_metrics["with_canary_var"])
